@@ -1,0 +1,10 @@
+name: environment
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8.1
+  - torchvision=0.10.0
+  - pip:
+    - catalyst==21.7
+    - pillow==8.3.1
