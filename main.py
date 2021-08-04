@@ -36,6 +36,7 @@ def parse_args():
 
 
 def main():
+    # setting the device
     args = parse_args()
     if args.cuda:
         if torch.cuda.is_available:
@@ -45,10 +46,24 @@ def main():
             device='cpu'
     else:
         device='cpu'
+    
+    # setting the seed
     utils.set_global_seed(args.seed)
+    
+    # generating the dataloaders
     loaders, preprocess = generate_dataloaders(args.data_path, args.batchsize)
+    
+    
+    """
+    Using pretrained resnet18 as anomaly detector
+    """
     model = models.resnet18(pretrained=True)
     roc_auc_resnet = compute_rocauc(model, loaders, device)
+    
+    
+    """
+    Using pretrained resnet18 as backend of the detector checking with freezed layers
+    """
     vae = ResNetVAE(latent_dim=1000, freeze=True)
     vae.to(device)
     optimizer = optim.Adam(vae.parameters(), lr=args.lr)
@@ -69,6 +84,10 @@ def main():
         verbose=True,
         load_best_on_end=True,
     )
+    
+    """
+    Changing unfreezing all the layers
+    """
     model = vae.resnet18
     roc_auc_someth = compute_rocauc(model, loaders, device)
     for param in vae.parameters():
@@ -143,6 +162,9 @@ def compute_rocauc(model, loaders, device):
     return roc_auc
 
 class CustomRunner(dl.Runner):
+    """
+    Runner for training
+    """
     def predict_batch(self, batch):
         return self.model(batch[0].to(self.device))
 
